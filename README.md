@@ -1,73 +1,91 @@
 # Bank Customer Churn Prediction
 
-This project explores machine-learning approaches for predicting whether a bank customer will churn. The analysis is implemented in a Jupyter notebook and focuses on improving F1 score for this imbalanced classification problem.
+This project builds and compares machine-learning models to predict whether a bank customer will churn (`Exited = 1`). The workflow includes exploratory analysis, preprocessing, model tuning, and evaluation with emphasis on the F1 score for this imbalanced classification task. While working on the project I learned SHAP, Pipeline function to tuning different models efficiently.
 
 ## Project structure
 
 ```text
 bank_churn/
-├── configs.yaml          # Model configuration
+├── README.md
+├── configs.yaml                     # Model configuration and hyperparameter defaults
+├── requirements.txt                 # Python dependencies
+├── hypertuning.ipynb                # Hyperparameter tuning and model comparison
 ├── notebook/
-│   └── train.ipynb       # Exploratory analysis, training, tuning, and evaluation
-└── src/
-    └── preprocess/       # Preprocessing code
+│   └── train.ipynb                 # Earlier notebook version of the workflow
+├── src/
+│   ├── bank_train.ipynb             # Final model training and evaluation notebook
+│   └── train.ipynb                  # Additional training notebook
+├── test/
+│   └── ...                          # Test-related files and outputs
+└── .vscode/
+   └── settings.json
 ```
+
+## Objective
+
+The goal is to predict customer churn using customer profile and account features such as age, balance, tenure, geography, and product usage. The target variable is `Exited`.
 
 ## Data preparation
 
-The `Exited` column is the target variable. The identifier and name columns (`RowNumber`, `CustomerId`, and `Surname`) are removed because they do not provide useful predictive information.
+The raw dataset is cleaned before modeling:
 
-The remaining features are processed within a scikit-learn `Pipeline`:
+- Identifier and non-informative columns such as `RowNumber`, `CustomerId`, and `Surname` are removed.
+- Numerical features are processed with imputation and scaling.
+- Categorical features are processed with imputation and one-hot encoding.
+- The model pipeline is fit on the training data only to avoid data leakage.
 
-- Numeric columns have missing values replaced with the median and are standardized with `StandardScaler`.
-- Categorical columns have missing values replaced with `"missing"` and are converted to numeric indicator columns with `OneHotEncoder`.
-- `handle_unknown="ignore"` allows the validation and test sets to contain categories that were not present during training.
+The train/validation/test split is performed before hyperparameter tuning and evaluation.
 
-Using the preprocessor inside the pipeline ensures that transformations are fitted only on the training data, preventing data leakage.
+## Models evaluated
 
-## Models
-
-The notebook compares several scikit-learn classifiers:
+The notebooks compare several scikit-learn classifiers:
 
 - Logistic Regression
 - Random Forest
 - Gradient Boosting
 
-Because churn data is imbalanced, the notebook evaluates class-weighted models and minority-class upsampling. Hyperparameters are tuned with five-fold cross-validation on the training set, using F1 score as the primary model-selection metric. A separate validation set is used to compare the tuned models.
+Because churn is an imbalanced classification problem, the project also evaluates:
+
+- class-weighted models
+- minority-class upsampling
+
+F1 score is used as the primary model-selection metric.
 
 ## Results
 
-The class-weighted Random Forest produced the best validation result, with an F1 score of approximately **0.59**. It was selected for final evaluation and achieved an F1 score of approximately **0.50** on the held-out test set.
+The best-performing validation configuration in the final project workflow was the class-weighted Random Forest, which reached approximately:
 
-The test set should be used only for final evaluation. It must not be used for hyperparameter tuning, choosing the sampling strategy, or selecting a classification threshold.
+- F1 score: **0.61**
+- Accuracy: **0.84**
+- Precision: **0.62**
+- Recall: **0.61**
+- ROC AUC: **0.86**
+
+On the held-out test set, the final F1 score was approximately **0.50**, which indicates that the model still has room for improvement before deployment in a production setting.
 
 ## Getting started
 
-1. Install Python and create an environment.
-2. Install the required packages:
+1. Create a Python environment and activate it.
+2. Install the dependencies:
 
    ```bash
-   pip install jupyter pandas numpy scikit-learn matplotlib seaborn pyyaml tensorflow
+   pip install -r requirements.txt
    ```
 
-3. Start Jupyter:
+3. Launch Jupyter Notebook or JupyterLab:
 
    ```bash
    jupyter notebook
    ```
 
-4. Open [`notebook/train.ipynb`](notebook/train.ipynb) and run the cells in order.
+4. Open one of the notebooks, starting with `src/bank_train.ipynb` or `hypertuning.ipynb`.
 
 ## Configuration
 
-Model defaults are stored in [`configs.yaml`](configs.yaml). The configuration includes parameters for the Random Forest, Logistic Regression, and Gradient Boosting models, including random seeds and tree settings.
+Model settings and defaults are stored in [`configs.yaml`](configs.yaml). These include parameters for Random Forest, Logistic Regression, and Gradient Boosting models.
 
-## Evaluation
+## Evaluation notes
 
-The notebook reports precision, recall, and F1 score. F1 is calculated as the harmonic mean of precision and recall:
+The project reports several metrics, including precision, recall, F1 score, and ROC AUC. F1 is emphasized because it provides a better summary than accuracy for imbalanced datasets, where a model can appear highly accurate while missing the minority churn class.
 
-```text
-F1 = 2 × (precision × recall) / (precision + recall)
-```
-
-This metric is useful here because it balances identifying churners with avoiding excessive false-positive predictions.
+The final evaluation should use a separate unseen test set, and the test set should not be used for hyperparameter tuning or model selection.
